@@ -56,10 +56,10 @@
 <body>
     <div class="container">
         <h2>Pearson Correlation Coefficient Calculator</h2>
-        <p>Enter values for Plant Height (X1) and Grain Length (X2):</p>
+        <p>Enter values for X1 and value of X2 (comma or space-separated):</p>
         <div class="input-container">
-            <input type="text" id="xInput" placeholder="Enter X values (comma-separated)">
-            <input type="text" id="yInput" placeholder="Enter Y values (comma-separated)">
+            <input type="text" id="xInput" placeholder="Enter X values">
+            <input type="text" id="yInput" placeholder="Enter Y values">
         </div>
         <button onclick="calculateCorrelation()">Calculate</button>
         
@@ -68,9 +68,13 @@
     </div>
 
     <script>
+        function parseInput(input) {
+            return input.trim().split(/[,\s]+/).map(Number);
+        }
+
         function calculateCorrelation() {
-            let xValues = document.getElementById("xInput").value.trim().split(",").map(Number);
-            let yValues = document.getElementById("yInput").value.trim().split(",").map(Number);
+            let xValues = parseInput(document.getElementById("xInput").value);
+            let yValues = parseInput(document.getElementById("yInput").value);
             
             if (xValues.length !== yValues.length || xValues.includes(NaN) || yValues.includes(NaN)) {
                 document.getElementById("output").innerHTML = "<p style='color: red;'>Please enter valid numerical values with equal length.</p>";
@@ -81,11 +85,12 @@
             let meanX = xValues.reduce((a, b) => a + b, 0) / n;
             let meanY = yValues.reduce((a, b) => a + b, 0) / n;
             
-            let output = `<p><strong>Mean of X:</strong> ${meanX.toFixed(3)}</p>`;
-            output += `<p><strong>Mean of Y:</strong> ${meanY.toFixed(3)}</p>`;
+            let output = `<h3>Step 1: Calculate Means</h3>`;
+            output += `<p><strong>Mean of X (X̄):</strong> ${meanX.toFixed(3)}</p>`;
+            output += `<p><strong>Mean of Y (Ȳ):</strong> ${meanY.toFixed(3)}</p>`;
 
             let sumXY = 0, sumX2 = 0, sumY2 = 0;
-            let steps = `<table><tr><th>X</th><th>Y</th><th>(X - X̄)</th><th>(Y - Ȳ)</th><th>(X-X̄)(Y-Ȳ)</th></tr>`;
+            let steps = `<h3>Step 2: Compute Deviations</h3><table><tr><th>X</th><th>Y</th><th>(X - X̄)</th><th>(Y - Ȳ)</th><th>(X-X̄)(Y-Ȳ)</th></tr>`;
             
             for (let i = 0; i < n; i++) {
                 let dx = xValues[i] - meanX;
@@ -100,6 +105,11 @@
             
             let correlation = sumXY / Math.sqrt(sumX2 * sumY2);
             output += steps;
+            
+            output += `<h3>Step 3: Apply the Pearson Correlation Formula</h3>`;
+            output += `<p>r = Σ((X - X̄)(Y - Ȳ)) / √[Σ(X - X̄)² * Σ(Y - Ȳ)²]</p>`;
+            output += `<p>r = ${sumXY.toFixed(3)} / √(${sumX2.toFixed(3)} * ${sumY2.toFixed(3)})</p>`;
+            output += `<h3>Final Result:</h3>`;
             output += `<p><strong>Correlation Coefficient (r):</strong> ${correlation.toFixed(3)}</p>`;
             
             document.getElementById("output").innerHTML = output;
