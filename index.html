@@ -1,119 +1,170 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Correlation Calculator</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 20px;
-            background-color: #f4f4f4;
-        }
-        .container {
-            background: white;
-            padding: 20px;
-            width: 60%;
-            margin: auto;
-            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-            border-radius: 10px;
-        }
-        table {
-            width: 100%;
-            margin: 20px 0;
-            border-collapse: collapse;
-        }
-        th, td {
-            border: 1px solid black;
-            padding: 10px;
-            text-align: center;
-        }
-        button {
-            padding: 10px 15px;
-            margin-top: 10px;
-            cursor: pointer;
-            background-color: #28a745;
-            color: white;
-            border: none;
-            border-radius: 5px;
-        }
-        button:hover {
-            background-color: #218838;
-        }
-        .input-container {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 10px;
-        }
-        input {
-            padding: 10px;
-            width: 40%;
-        }
+      body {
+        font-family: Arial, sans-serif;
+        text-align: center;
+        margin: 20px;
+        background-color: #f4f4f4;
+      }
+      .container {
+        background: white;
+        padding: 20px;
+        width: 60%;
+        margin: auto;
+        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        border-radius: 10px;
+      }
+      table {
+        width: 100%;
+        margin: 20px 0;
+        border-collapse: collapse;
+      }
+      th,
+      td {
+        border: 1px solid black;
+        padding: 10px;
+        text-align: center;
+      }
+      button {
+        padding: 10px 15px;
+        margin-top: 10px;
+        cursor: pointer;
+        background-color: #286ca7;
+        color: white;
+        border: none;
+        border-radius: 5px;
+      }
+      button:hover {
+        background-color: #1f5481;
+      }
+      .input-container {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+      input {
+        padding: 10px;
+        width: 40%;
+      }
+      canvas {
+        margin-top: 20px;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div class="container">
-        <h2>Pearson Correlation Coefficient Calculator</h2>
-        <p>Enter values for X1 and value of X2 (comma or space-separated):</p>
-        <div class="input-container">
-            <input type="text" id="xInput" placeholder="Enter X values">
-            <input type="text" id="yInput" placeholder="Enter Y values">
-        </div>
-        <button onclick="calculateCorrelation()">Calculate</button>
-        
-        <h3>Step-by-Step Calculation</h3>
-        <div id="output"></div>
+      <h2>Pearson Correlation Coefficient Calculator</h2>
+      <p>
+        Enter values for Plant Height (X1) and Grain Length (X2) (comma or
+        space-separated):
+      </p>
+      <div class="input-container">
+        <input type="text" id="xInput" placeholder="Enter X values" />
+        <input type="text" id="yInput" placeholder="Enter Y values" />
+      </div>
+      <button onclick="calculateCorrelation()">Calculate</button>
+
+      <h3>Step-by-Step Calculation</h3>
+      <div id="output"></div>
+      <canvas id="correlationChart"></canvas>
     </div>
 
     <script>
-        function parseInput(input) {
-            return input.trim().split(/[,\s]+/).map(Number);
+      function parseInput(input) {
+        return input
+          .trim()
+          .split(/[,\s]+/)
+          .map(Number);
+      }
+
+      function calculateCorrelation() {
+        let xValues = parseInput(document.getElementById("xInput").value);
+        let yValues = parseInput(document.getElementById("yInput").value);
+
+        if (
+          xValues.length !== yValues.length ||
+          xValues.includes(NaN) ||
+          yValues.includes(NaN)
+        ) {
+          document.getElementById("output").innerHTML =
+            "<p style='color: red;'>Please enter valid numerical values with equal length.</p>";
+          return;
         }
 
-        function calculateCorrelation() {
-            let xValues = parseInput(document.getElementById("xInput").value);
-            let yValues = parseInput(document.getElementById("yInput").value);
-            
-            if (xValues.length !== yValues.length || xValues.includes(NaN) || yValues.includes(NaN)) {
-                document.getElementById("output").innerHTML = "<p style='color: red;'>Please enter valid numerical values with equal length.</p>";
-                return;
-            }
-            
-            let n = xValues.length;
-            let meanX = xValues.reduce((a, b) => a + b, 0) / n;
-            let meanY = yValues.reduce((a, b) => a + b, 0) / n;
-            
-            let output = `<h3>Step 1: Calculate Means</h3>`;
-            output += `<p><strong>Mean of X (X̄):</strong> ${meanX.toFixed(3)}</p>`;
-            output += `<p><strong>Mean of Y (Ȳ):</strong> ${meanY.toFixed(3)}</p>`;
+        let n = xValues.length;
+        let meanX = xValues.reduce((a, b) => a + b, 0) / n;
+        let meanY = yValues.reduce((a, b) => a + b, 0) / n;
 
-            let sumXY = 0, sumX2 = 0, sumY2 = 0;
-            let steps = `<h3>Step 2: Compute Deviations</h3><table><tr><th>X</th><th>Y</th><th>(X - X̄)</th><th>(Y - Ȳ)</th><th>(X-X̄)(Y-Ȳ)</th></tr>`;
-            
-            for (let i = 0; i < n; i++) {
-                let dx = xValues[i] - meanX;
-                let dy = yValues[i] - meanY;
-                let product = dx * dy;
-                sumXY += product;
-                sumX2 += dx * dx;
-                sumY2 += dy * dy;
-                steps += `<tr><td>${xValues[i]}</td><td>${yValues[i]}</td><td>${dx.toFixed(3)}</td><td>${dy.toFixed(3)}</td><td>${product.toFixed(3)}</td></tr>`;
-            }
-            steps += "</table>";
-            
-            let correlation = sumXY / Math.sqrt(sumX2 * sumY2);
-            output += steps;
-            
-            output += `<h3>Step 3: Apply the Pearson Correlation Formula</h3>`;
-            output += `<p>r = Σ((X - X̄)(Y - Ȳ)) / √[Σ(X - X̄)² * Σ(Y - Ȳ)²]</p>`;
-            output += `<p>r = ${sumXY.toFixed(3)} / √(${sumX2.toFixed(3)} * ${sumY2.toFixed(3)})</p>`;
-            output += `<h3>Final Result:</h3>`;
-            output += `<p><strong>Correlation Coefficient (r):</strong> ${correlation.toFixed(3)}</p>`;
-            
-            document.getElementById("output").innerHTML = output;
+        let output = `<h3>Step 1: Calculate Means</h3>`;
+        output += `<p><strong>Mean of X (X̄):</strong> ${meanX.toFixed(3)}</p>`;
+        output += `<p><strong>Mean of Y (Ȳ):</strong> ${meanY.toFixed(3)}</p>`;
+
+        let sumXY = 0,
+          sumX2 = 0,
+          sumY2 = 0;
+        let steps = `<h3>Step 2: Compute Deviations</h3><table><tr><th>X</th><th>Y</th><th>(X - X̄)</th><th>(Y - Ȳ)</th><th>(X-X̄)(Y-Ȳ)</th></tr>`;
+
+        for (let i = 0; i < n; i++) {
+          let dx = xValues[i] - meanX;
+          let dy = yValues[i] - meanY;
+          let product = dx * dy;
+          sumXY += product;
+          sumX2 += dx * dx;
+          sumY2 += dy * dy;
+          steps += `<tr><td>${xValues[i]}</td><td>${
+            yValues[i]
+          }</td><td>${dx.toFixed(3)}</td><td>${dy.toFixed(
+            3
+          )}</td><td>${product.toFixed(3)}</td></tr>`;
         }
+        steps += "</table>";
+
+        let correlation = sumXY / Math.sqrt(sumX2 * sumY2);
+        output += steps;
+
+        output += `<h3>Step 3: Apply the Pearson Correlation Formula</h3>`;
+        output += `<p>r = Σ((X - X̄)(Y - Ȳ)) / √[Σ(X - X̄)² * Σ(Y - Ȳ)²]</p>`;
+        output += `<p>r = ${sumXY.toFixed(3)} / √(${sumX2.toFixed(
+          3
+        )} * ${sumY2.toFixed(3)})</p>`;
+        output += `<h3>Final Result:</h3>`;
+        output += `<p><strong>Correlation Coefficient (r):</strong> ${correlation.toFixed(
+          3
+        )}</p>`;
+
+        document.getElementById("output").innerHTML = output;
+        drawChart(xValues, yValues);
+      }
+
+      function drawChart(xValues, yValues) {
+        let ctx = document.getElementById("correlationChart").getContext("2d");
+        if (window.chartInstance) window.chartInstance.destroy();
+        window.chartInstance = new Chart(ctx, {
+          type: "scatter",
+          data: {
+            datasets: [
+              {
+                label: "Scatter Plot",
+                data: xValues.map((x, i) => ({ x: x, y: yValues[i] })),
+                backgroundColor: "green",
+              },
+            ],
+          },
+          options: {
+            scales: {
+              x: { title: { display: true, text: "X Values" } },
+              y: { title: { display: true, text: "Y Values" } },
+            },
+          },
+        });
+      }
     </script>
-</body>
+  </body>
 </html>
