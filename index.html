@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Correlation Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            width: 60%;
+            margin: auto;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+        }
+        table {
+            width: 100%;
+            margin: 20px 0;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 10px;
+            text-align: center;
+        }
+        button {
+            padding: 10px 15px;
+            margin-top: 10px;
+            cursor: pointer;
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 5px;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+        .input-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        input {
+            padding: 10px;
+            width: 40%;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Pearson Correlation Coefficient Calculator</h2>
+        <p>Enter values for Plant Height (X1) and Grain Length (X2):</p>
+        <div class="input-container">
+            <input type="text" id="xInput" placeholder="Enter X values (comma-separated)">
+            <input type="text" id="yInput" placeholder="Enter Y values (comma-separated)">
+        </div>
+        <button onclick="calculateCorrelation()">Calculate</button>
+        
+        <h3>Step-by-Step Calculation</h3>
+        <div id="output"></div>
+    </div>
+
+    <script>
+        function calculateCorrelation() {
+            let xValues = document.getElementById("xInput").value.trim().split(",").map(Number);
+            let yValues = document.getElementById("yInput").value.trim().split(",").map(Number);
+            
+            if (xValues.length !== yValues.length || xValues.includes(NaN) || yValues.includes(NaN)) {
+                document.getElementById("output").innerHTML = "<p style='color: red;'>Please enter valid numerical values with equal length.</p>";
+                return;
+            }
+            
+            let n = xValues.length;
+            let meanX = xValues.reduce((a, b) => a + b, 0) / n;
+            let meanY = yValues.reduce((a, b) => a + b, 0) / n;
+            
+            let output = `<p><strong>Mean of X:</strong> ${meanX.toFixed(3)}</p>`;
+            output += `<p><strong>Mean of Y:</strong> ${meanY.toFixed(3)}</p>`;
+
+            let sumXY = 0, sumX2 = 0, sumY2 = 0;
+            let steps = `<table><tr><th>X</th><th>Y</th><th>(X - X̄)</th><th>(Y - Ȳ)</th><th>(X-X̄)(Y-Ȳ)</th></tr>`;
+            
+            for (let i = 0; i < n; i++) {
+                let dx = xValues[i] - meanX;
+                let dy = yValues[i] - meanY;
+                let product = dx * dy;
+                sumXY += product;
+                sumX2 += dx * dx;
+                sumY2 += dy * dy;
+                steps += `<tr><td>${xValues[i]}</td><td>${yValues[i]}</td><td>${dx.toFixed(3)}</td><td>${dy.toFixed(3)}</td><td>${product.toFixed(3)}</td></tr>`;
+            }
+            steps += "</table>";
+            
+            let correlation = sumXY / Math.sqrt(sumX2 * sumY2);
+            output += steps;
+            output += `<p><strong>Correlation Coefficient (r):</strong> ${correlation.toFixed(3)}</p>`;
+            
+            document.getElementById("output").innerHTML = output;
+        }
+    </script>
+</body>
+</html>
