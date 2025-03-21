@@ -15,7 +15,7 @@
       .container {
         background: white;
         padding: 20px;
-        width: 60%;
+        width: 90%;
         margin: auto;
         box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
         border-radius: 10px;
@@ -56,6 +56,9 @@
       canvas {
         margin-top: 20px;
       }
+      .error {
+        color: red;
+      }
     </style>
   </head>
   <body>
@@ -81,6 +84,7 @@
         return input
           .trim()
           .split(/[,\s]+/)
+          .filter((val) => val !== "")
           .map(Number);
       }
 
@@ -94,7 +98,7 @@
           yValues.includes(NaN)
         ) {
           document.getElementById("output").innerHTML =
-            "<p style='color: red;'>Please enter valid numerical values with equal length.</p>";
+            "<p class='error'>Please enter valid numerical values with equal length.</p>";
           return;
         }
 
@@ -109,37 +113,82 @@
         let sumXY = 0,
           sumX2 = 0,
           sumY2 = 0;
-        let steps = `<h3>Step 2: Compute Deviations</h3><table><tr><th>X</th><th>Y</th><th>(X - X̄)</th><th>(Y - Ȳ)</th><th>(X-X̄)(Y-Ȳ)</th></tr>`;
+        let steps = `<h3>Step 2: Compute Deviations</h3><table>
+                <tr>
+                  <th>X</th>
+                  <th>Y</th>
+                  <th>(X - X̄)</th>
+                  <th>(Y - Ȳ)</th>
+                  <th>(X - X̄)(Y - Ȳ)</th>
+                  <th>(X - X̄)²</th>
+                  <th>(Y - Ȳ)²</th>
+                </tr>`;
 
         for (let i = 0; i < n; i++) {
           let dx = xValues[i] - meanX;
           let dy = yValues[i] - meanY;
           let product = dx * dy;
           sumXY += product;
-          sumX2 += dx * dx;
-          sumY2 += dy * dy;
-          steps += `<tr><td>${xValues[i]}</td><td>${
-            yValues[i]
-          }</td><td>${dx.toFixed(3)}</td><td>${dy.toFixed(
-            3
-          )}</td><td>${product.toFixed(3)}</td></tr>`;
+          let dx2 = dx * dx;
+          let dy2 = dy * dy;
+          sumX2 += dx2;
+          sumY2 += dy2;
+          steps += `<tr>
+                <td>${xValues[i]}</td>
+                <td>${yValues[i]}</td>
+                <td>${dx.toFixed(3)}</td>
+                <td>${dy.toFixed(3)}</td>
+                <td>${product.toFixed(3)}</td>
+                <td>${dx2.toFixed(3)}</td>
+                <td>${dy2.toFixed(3)}</td>
+              </tr>`;
         }
-        steps += "</table>";
 
-        let varianceX = sumX2 / n;
-        let varianceY = sumY2 / n;
+        steps += `<tr>
+              <td><strong>Mean of X (X̄):</strong> ${meanX.toFixed(3)}</td>
+              <td><strong>Mean of Y (Ȳ):</strong> ${meanY.toFixed(3)}</td>
+              <td colspan="2"><strong>Total Sum</strong></td>
+              <td><strong>${sumXY.toFixed(3)}</strong></td>
+              <td><strong>${sumX2.toFixed(3)}</strong></td>
+              <td><strong>${sumY2.toFixed(3)}</strong></td>
+            </tr>`;
+        steps += `</table>`;
+
         let correlation = sumXY / Math.sqrt(sumX2 * sumY2);
+
+        // Interpret the correlation strength
+        let correlationStrength = "";
+        if (correlation === 1) {
+          correlationStrength =
+            "Perfect Positive: X and Y increase together in a perfect linear relationship.";
+        } else if (correlation >= 0.7 && correlation < 1) {
+          correlationStrength =
+            "Strong Positive: A strong upward trend exists between X and Y.";
+        } else if (correlation >= 0.4 && correlation < 0.7) {
+          correlationStrength =
+            "Moderate Positive: A moderate upward trend exists.";
+        } else if (correlation >= 0.1 && correlation < 0.4) {
+          correlationStrength = "Weak Positive: A slight upward trend exists.";
+        } else if (correlation > -0.1 && correlation < 0.1) {
+          correlationStrength =
+            "No Correlation: No linear relationship between X and Y.";
+        } else if (correlation >= -0.4 && correlation < -0.1) {
+          correlationStrength =
+            "Weak Negative: A slight downward trend exists.";
+        } else if (correlation >= -0.7 && correlation < -0.4) {
+          correlationStrength =
+            "Moderate Negative: A moderate downward trend exists.";
+        } else if (correlation >= -0.9 && correlation < -0.7) {
+          correlationStrength =
+            "Strong Negative: A strong downward trend exists.";
+        } else if (correlation === -1) {
+          correlationStrength =
+            "Perfect Negative: X and Y decrease together in a perfect linear relationship.";
+        }
+
         output += steps;
 
-        output += `<h3>Step 3: Compute Variance</h3>`;
-        output += `<p>Variance of X (σ²x) = Σ(X - X̄)² / n = ${varianceX.toFixed(
-          3
-        )}</p>`;
-        output += `<p>Variance of Y (σ²y) = Σ(Y - Ȳ)² / n = ${varianceY.toFixed(
-          3
-        )}</p>`;
-
-        output += `<h3>Step 4: Apply the Pearson Correlation Formula</h3>`;
+        output += `<h3>Step 3: Apply the Pearson Correlation Formula</h3>`;
         output += `<p>r = Σ((X - X̄)(Y - Ȳ)) / √[Σ(X - X̄)² * Σ(Y - Ȳ)²]</p>`;
         output += `<p>r = ${sumXY.toFixed(3)} / √(${sumX2.toFixed(
           3
@@ -148,6 +197,50 @@
         output += `<p><strong>Correlation Coefficient (r):</strong> ${correlation.toFixed(
           3
         )}</p>`;
+        output += `<p><strong>Correlation Strength:</strong> ${correlationStrength}</p>`;
+
+        // Hypothesis Testing
+        output += `<h3>Hypothesis Testing</h3>`;
+        output += `<p><strong>Null Hypothesis (H₀):</strong> There is no correlation between X and Y (ρ = 0).</p>`;
+        output += `<p><strong>Alternative Hypothesis (H₁):</strong> There is a significant correlation (ρ ≠ 0).</p>`;
+
+        let tStatistic =
+          (correlation * Math.sqrt(n - 2)) / Math.sqrt(1 - correlation ** 2);
+        let df = n - 2;
+        let alpha = 0.05; // Significance level
+        let tCritical = 2.306; // Example critical value for df=8 and α=0.05 (two-tailed)
+
+        output += `<h3>Step 4: Calculate t-Statistic</h3>`;
+        output += `<p>t = (r * √(n - 2)) / √(1 - r²)</p>`;
+        output += `<p>t = (${correlation.toFixed(
+          3
+        )} * √(${n} - 2)) / √(1 - ${correlation.toFixed(3)}²)</p>`;
+        output += `<p>t = ${tStatistic.toFixed(3)}</p>`;
+
+        output += `<h3>Step 5: Determine Degrees of Freedom</h3>`;
+        output += `<p>df = n - 2 = ${n} - 2 = ${df}</p>`;
+
+        output += `<h3>Step 6: Find Critical t-Value</h3>`;
+        output += `<p>For df = ${df} and α = ${alpha} (two-tailed), the critical t-value is ${tCritical.toFixed(
+          3
+        )}.</p>`;
+
+        output += `<h3>Step 7: Compare t-Statistic with t-Critical</h3>`;
+        if (Math.abs(tStatistic) > tCritical) {
+          output += `<p>Since |t| = ${Math.abs(tStatistic).toFixed(
+            3
+          )} > t-critical = ${tCritical.toFixed(
+            3
+          )}, we <strong>reject</strong> H₀.</p>`;
+          output += `<p>The correlation is <strong>statistically significant</strong>.</p>`;
+        } else {
+          output += `<p>Since |t| = ${Math.abs(tStatistic).toFixed(
+            3
+          )} ≤ t-critical = ${tCritical.toFixed(
+            3
+          )}, we <strong>fail to reject</strong> H₀.</p>`;
+          output += `<p>The correlation is <strong>not statistically significant</strong>.</p>`;
+        }
 
         document.getElementById("output").innerHTML = output;
         drawChart(xValues, yValues);
@@ -163,7 +256,7 @@
               {
                 label: "Scatter Plot",
                 data: xValues.map((x, i) => ({ x: x, y: yValues[i] })),
-                backgroundColor: "blue",
+                backgroundColor: "green",
               },
             ],
           },
