@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Correlation Calculator</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
       /* General Styles */
       body {
@@ -162,6 +163,27 @@
         margin-top: 10px;
       }
 
+      /* Floating Button Styles */
+      .floating-btn {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        padding: 10px 20px;
+        background-color: #178e58;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1rem;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        transition: background-color 0.3s ease;
+        display: none; /* Hidden by default */
+      }
+
+      .floating-btn:hover {
+        background-color: #2cc197;
+      }
+
       /* Responsive Design for Mobile and Tablet */
       @media (min-width: 600px) {
         .input-container {
@@ -210,10 +232,7 @@
   <body>
     <div class="container">
       <h2>Pearson Correlation Coefficient Calculator</h2>
-      <p>
-        Enter values for X and Y (comma or
-        space-separated):
-      </p>
+      <p>Enter values for X and Y (comma or space-separated):</p>
       <div class="input-container">
         <input type="text" id="xInput" placeholder="Enter X values" />
         <input type="text" id="yInput" placeholder="Enter Y values" />
@@ -225,6 +244,8 @@
       </div>
       <canvas id="correlationChart"></canvas>
     </div>
+    <!-- Floating Download Button -->
+    <button id="downloadPdfBtn" class="floating-btn">Download PDF</button>
 
     <script>
       function parseInput(input) {
@@ -254,30 +275,26 @@
         let meanY = yValues.reduce((a, b) => a + b, 0) / n;
 
         let output = `<div class="calculation-step">
-                        <h3>Step 1: Calculate Means</h3>
-                        <p><strong>Mean of X (X̄):</strong> ${meanX.toFixed(
-                          3
-                        )}</p>
-                        <p><strong>Mean of Y (Ȳ):</strong> ${meanY.toFixed(
-                          3
-                        )}</p>
-                      </div>`;
+                  <h3>Step 1: Calculate Means</h3>
+                  <p><strong>Mean of X (X̄):</strong> ${meanX.toFixed(3)}</p>
+                  <p><strong>Mean of Y (Ȳ):</strong> ${meanY.toFixed(3)}</p>
+                </div>`;
 
         let sumXY = 0,
           sumX2 = 0,
           sumY2 = 0;
         let steps = `<div class="calculation-step">
-                        <h3>Step 2: Compute Deviations</h3>
-                        <table>
-                          <tr>
-                            <th>X</th>
-                            <th>Y</th>
-                            <th>(X - X̄)</th>
-                            <th>(Y - Ȳ)</th>
-                            <th>(X - X̄)(Y - Ȳ)</th>
-                            <th>(X - X̄)²</th>
-                            <th>(Y - Ȳ)²</th>
-                          </tr>`;
+                  <h3>Step 2: Compute Deviations</h3>
+                  <table>
+                    <tr>
+                      <th>X</th>
+                      <th>Y</th>
+                      <th>(X - X̄)</th>
+                      <th>(Y - Ȳ)</th>
+                      <th>(X - X̄)(Y - Ȳ)</th>
+                      <th>(X - X̄)²</th>
+                      <th>(Y - Ȳ)²</th>
+                    </tr>`;
 
         for (let i = 0; i < n; i++) {
           let dx = xValues[i] - meanX;
@@ -289,26 +306,26 @@
           sumX2 += dx2;
           sumY2 += dy2;
           steps += `<tr>
-                      <td>${xValues[i]}</td>
-                      <td>${yValues[i]}</td>
-                      <td>${dx.toFixed(3)}</td>
-                      <td>${dy.toFixed(3)}</td>
-                      <td>${product.toFixed(3)}</td>
-                      <td>${dx2.toFixed(3)}</td>
-                      <td>${dy2.toFixed(3)}</td>
-                    </tr>`;
+                <td>${xValues[i]}</td>
+                <td>${yValues[i]}</td>
+                <td>${dx.toFixed(3)}</td>
+                <td>${dy.toFixed(3)}</td>
+                <td>${product.toFixed(3)}</td>
+                <td>${dx2.toFixed(3)}</td>
+                <td>${dy2.toFixed(3)}</td>
+              </tr>`;
         }
 
         steps += `<tr>
-                    <td><strong>Mean of X (X̄):</strong> ${meanX.toFixed(3)}</td>
-                    <td><strong>Mean of Y (Ȳ):</strong> ${meanY.toFixed(3)}</td>
-                    <td colspan="2"><strong>Total Sum</strong></td>
-                    <td><strong>${sumXY.toFixed(3)}</strong></td>
-                    <td><strong>${sumX2.toFixed(3)}</strong></td>
-                    <td><strong>${sumY2.toFixed(3)}</strong></td>
-                  </tr>`;
+              <td><strong>Mean of X (X̄):</strong> ${meanX.toFixed(3)}</td>
+              <td><strong>Mean of Y (Ȳ):</strong> ${meanY.toFixed(3)}</td>
+              <td colspan="2"><strong>Total Sum</strong></td>
+              <td><strong>${sumXY.toFixed(3)}</strong></td>
+              <td><strong>${sumX2.toFixed(3)}</strong></td>
+              <td><strong>${sumY2.toFixed(3)}</strong></td>
+            </tr>`;
         steps += `</table>
-                  </div>`;
+            </div>`;
 
         let correlation = sumXY / Math.sqrt(sumX2 * sumY2);
 
@@ -345,23 +362,23 @@
         output += steps;
 
         output += `<div class="calculation-step">
-                    <h3>Step 3: Apply the Pearson Correlation Formula</h3>
-                    <p>r = Σ((X - X̄)(Y - Ȳ)) / √[Σ(X - X̄)² * Σ(Y - Ȳ)²]</p>
-                    <p>r = ${sumXY.toFixed(3)} / √(${sumX2.toFixed(
+              <h3>Step 3: Apply the Pearson Correlation Formula</h3>
+              <p>r = Σ((X - X̄)(Y - Ȳ)) / √[Σ(X - X̄)² * Σ(Y - Ȳ)²]</p>
+              <p>r = ${sumXY.toFixed(3)} / √(${sumX2.toFixed(
           3
         )} * ${sumY2.toFixed(3)})</p>
-                    <p><strong>Correlation Coefficient (r):</strong> ${correlation.toFixed(
-                      3
-                    )}</p>
-                    <p><strong>Correlation Strength:</strong> ${correlationStrength}</p>
-                  </div>`;
+              <p><strong>Correlation Coefficient (r):</strong> ${correlation.toFixed(
+                3
+              )}</p>
+              <p><strong>Correlation Strength:</strong> ${correlationStrength}</p>
+            </div>`;
 
         // Hypothesis Testing
         output += `<div class="calculation-step">
-                    <h3>Hypothesis Testing</h3>
-                    <p><strong>Null Hypothesis (H₀):</strong> There is no correlation between X and Y (ρ = 0).</p>
-                    <p><strong>Alternative Hypothesis (H₁):</strong> There is a significant correlation (ρ ≠ 0).</p>
-                  </div>`;
+              <h3>Hypothesis Testing</h3>
+              <p><strong>Null Hypothesis (H₀):</strong> There is no correlation between X and Y (ρ = 0).</p>
+              <p><strong>Alternative Hypothesis (H₁):</strong> There is a significant correlation (ρ ≠ 0).</p>
+            </div>`;
 
         let tStatistic =
           (correlation * Math.sqrt(n - 2)) / Math.sqrt(1 - correlation ** 2);
@@ -370,28 +387,28 @@
         let tCritical = 2.306; // Example critical value for df=8 and α=0.05 (two-tailed)
 
         output += `<div class="calculation-step">
-                    <h3>Step 4: Calculate t-Statistic</h3>
-                    <p>t = (r * √(n - 2)) / √(1 - r²)</p>
-                    <p>t = (${correlation.toFixed(
-                      3
-                    )} * √(${n} - 2)) / √(1 - ${correlation.toFixed(3)}²)</p>
-                    <p>t = ${tStatistic.toFixed(3)}</p>
-                  </div>`;
+              <h3>Step 4: Calculate t-Statistic</h3>
+              <p>t = (r * √(n - 2)) / √(1 - r²)</p>
+              <p>t = (${correlation.toFixed(
+                3
+              )} * √(${n} - 2)) / √(1 - ${correlation.toFixed(3)}²)</p>
+              <p>t = ${tStatistic.toFixed(3)}</p>
+            </div>`;
 
         output += `<div class="calculation-step">
-                    <h3>Step 5: Determine Degrees of Freedom</h3>
-                    <p>df = n - 2 = ${n} - 2 = ${df}</p>
-                  </div>`;
+              <h3>Step 5: Determine Degrees of Freedom</h3>
+              <p>df = n - 2 = ${n} - 2 = ${df}</p>
+            </div>`;
 
         output += `<div class="calculation-step">
-                    <h3>Step 6: Find Critical t-Value</h3>
-                    <p>For df = ${df} and α = ${alpha} (two-tailed), the critical t-value is ${tCritical.toFixed(
+              <h3>Step 6: Find Critical t-Value</h3>
+              <p>For df = ${df} and α = ${alpha} (two-tailed), the critical t-value is ${tCritical.toFixed(
           3
         )}.</p>
-                  </div>`;
+            </div>`;
 
         output += `<div class="calculation-step">
-                    <h3>Step 7: Compare t-Statistic with t-Critical</h3>`;
+              <h3>Step 7: Compare t-Statistic with t-Critical</h3>`;
         if (Math.abs(tStatistic) > tCritical) {
           output += `<p>Since |t| = ${Math.abs(tStatistic).toFixed(
             3
@@ -411,6 +428,9 @@
 
         document.getElementById("output").innerHTML = output;
         drawChart(xValues, yValues);
+
+        // Show the floating download button after calculation is complete
+        showDownloadButton();
       }
 
       function drawChart(xValues, yValues) {
@@ -450,6 +470,31 @@
           },
         });
       }
+      function showDownloadButton() {
+        const downloadBtn = document.getElementById("downloadPdfBtn");
+        downloadBtn.style.display = "block"; // Show the button
+      }
+
+      function downloadAsPdf() {
+        const element = document.getElementById("output"); // The content to download
+        const options = {
+          margin: 10,
+          filename: "correlation_calculation.pdf",
+          image: { type: "jpeg", quality: 0.98 },
+          html2canvas: { scale: 2 },
+          jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+        };
+
+        // Generate and download the PDF
+        html2pdf().from(element).set(options).save();
+      }
+
+      // Attach the download function to the button
+      document
+        .getElementById("downloadPdfBtn")
+        .addEventListener("click", downloadAsPdf);
+
+      showDownloadButton();
     </script>
   </body>
 </html>
