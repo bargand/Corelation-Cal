@@ -6,58 +6,204 @@
     <title>Correlation Calculator</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+      /* General Styles */
       body {
         font-family: Arial, sans-serif;
-        text-align: center;
-        margin: 20px;
-        background-color: #f4f4f4;
+        margin: 0;
+        padding: 0;
+        background-color: #031b1b;
+        color: #d1d1d1;
+        line-height: 1.6;
+        font-size: 1rem;
       }
+
       .container {
-        background: white;
+        background-color: #052323;
         padding: 20px;
-        width: 90%;
-        margin: auto;
-        box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        max-width: 1000px;
+        margin: 20px auto;
         border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
       }
+
+      h2 {
+        font-size: 1.8rem;
+        color: #2cc197;
+      }
+
+      h3 {
+        font-size: 1.4rem;
+        color: #2cc197;
+      }
+
+      p {
+        font-size: 1rem;
+        color: #d1d1d1;
+      }
+
+      .input-container {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      input {
+        padding: 10px;
+        width: 100%;
+        border: 1px solid #04634d;
+        border-radius: 5px;
+        background-color: #031b1b;
+        color: #d1d1d1;
+        font-size: 1rem;
+      }
+
+      input::placeholder {
+        color: #888;
+      }
+
+      button {
+        padding: 10px 20px;
+        background-color: #04634d;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 1rem;
+        transition: background-color 0.3s ease;
+        width: 100%;
+      }
+
+      button:hover {
+        background-color: #034737;
+      }
+
       table {
         width: 100%;
         margin: 20px 0;
         border-collapse: collapse;
+        background-color: #031b1b;
+        border-radius: 10px;
+        overflow: hidden;
       }
+
       th,
       td {
-        border: 1px solid black;
-        padding: 10px;
+        border: 1px solid #04634d;
+        padding: 12px;
         text-align: center;
+        color: #d1d1d1;
+        font-size: 0.9rem;
       }
-      button {
-        padding: 10px 15px;
-        margin-top: 10px;
-        cursor: pointer;
-        background-color: #28a745;
+
+      th {
+        background-color: #04634d;
         color: white;
-        border: none;
-        border-radius: 5px;
       }
-      button:hover {
-        background-color: #218838;
+
+      tr:nth-child(even) {
+        background-color: #052323;
       }
-      .input-container {
-        display: flex;
-        justify-content: center;
-        gap: 10px;
-        margin-bottom: 10px;
+
+      .error {
+        color: #ff6b6b;
+        font-weight: bold;
       }
-      input {
-        padding: 10px;
-        width: 40%;
-      }
+
       canvas {
         margin-top: 20px;
+        background-color: #031b1b;
+        border-radius: 10px;
+        padding: 10px;
       }
-      .error {
-        color: red;
+
+      .output-section {
+        margin-top: 20px;
+        padding: 20px;
+        background-color: #031b1b;
+        border-radius: 10px;
+      }
+
+      .output-section h3 {
+        margin-top: 0;
+      }
+
+      .output-section p {
+        margin: 10px 0;
+      }
+
+      .output-section strong {
+        color: #2cc197;
+      }
+
+      /* Step-by-Step Calculation Styling */
+      .calculation-step {
+        border: 2px solid #04634d;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 20px;
+        background-color: #052323;
+      }
+
+      .calculation-step h3 {
+        margin-top: 0;
+        color: #2cc197;
+      }
+
+      .calculation-step p {
+        margin: 10px 0;
+      }
+
+      .calculation-step table {
+        margin-top: 10px;
+      }
+
+      /* Responsive Design for Mobile and Tablet */
+      @media (min-width: 600px) {
+        .input-container {
+          flex-direction: row;
+        }
+
+        input {
+          width: 45%;
+        }
+
+        button {
+          width: auto;
+        }
+
+        th,
+        td {
+          font-size: 1rem;
+        }
+      }
+
+      @media (max-width: 600px) {
+        h2 {
+          font-size: 1.5rem;
+        }
+
+        h3 {
+          font-size: 1.2rem;
+        }
+
+        .container {
+          padding: 15px;
+        }
+
+        .calculation-step {
+          padding: 10px;
+        }
+
+        table {
+          display: block;
+          overflow-x: auto;
+          white-space: nowrap;
+        }
       }
     </style>
   </head>
@@ -65,7 +211,7 @@
     <div class="container">
       <h2>Pearson Correlation Coefficient Calculator</h2>
       <p>
-        Enter values for Plant Height (X1) and Grain Length (X2) (comma or
+        Enter values for X and Y (comma or
         space-separated):
       </p>
       <div class="input-container">
@@ -74,8 +220,9 @@
       </div>
       <button onclick="calculateCorrelation()">Calculate</button>
 
-      <h3>Step-by-Step Calculation</h3>
-      <div id="output"></div>
+      <div class="output-section" id="output">
+        <!-- Output will be dynamically inserted here -->
+      </div>
       <canvas id="correlationChart"></canvas>
     </div>
 
@@ -106,23 +253,31 @@
         let meanX = xValues.reduce((a, b) => a + b, 0) / n;
         let meanY = yValues.reduce((a, b) => a + b, 0) / n;
 
-        let output = `<h3>Step 1: Calculate Means</h3>`;
-        output += `<p><strong>Mean of X (X̄):</strong> ${meanX.toFixed(3)}</p>`;
-        output += `<p><strong>Mean of Y (Ȳ):</strong> ${meanY.toFixed(3)}</p>`;
+        let output = `<div class="calculation-step">
+                        <h3>Step 1: Calculate Means</h3>
+                        <p><strong>Mean of X (X̄):</strong> ${meanX.toFixed(
+                          3
+                        )}</p>
+                        <p><strong>Mean of Y (Ȳ):</strong> ${meanY.toFixed(
+                          3
+                        )}</p>
+                      </div>`;
 
         let sumXY = 0,
           sumX2 = 0,
           sumY2 = 0;
-        let steps = `<h3>Step 2: Compute Deviations</h3><table>
-                <tr>
-                  <th>X</th>
-                  <th>Y</th>
-                  <th>(X - X̄)</th>
-                  <th>(Y - Ȳ)</th>
-                  <th>(X - X̄)(Y - Ȳ)</th>
-                  <th>(X - X̄)²</th>
-                  <th>(Y - Ȳ)²</th>
-                </tr>`;
+        let steps = `<div class="calculation-step">
+                        <h3>Step 2: Compute Deviations</h3>
+                        <table>
+                          <tr>
+                            <th>X</th>
+                            <th>Y</th>
+                            <th>(X - X̄)</th>
+                            <th>(Y - Ȳ)</th>
+                            <th>(X - X̄)(Y - Ȳ)</th>
+                            <th>(X - X̄)²</th>
+                            <th>(Y - Ȳ)²</th>
+                          </tr>`;
 
         for (let i = 0; i < n; i++) {
           let dx = xValues[i] - meanX;
@@ -134,25 +289,26 @@
           sumX2 += dx2;
           sumY2 += dy2;
           steps += `<tr>
-                <td>${xValues[i]}</td>
-                <td>${yValues[i]}</td>
-                <td>${dx.toFixed(3)}</td>
-                <td>${dy.toFixed(3)}</td>
-                <td>${product.toFixed(3)}</td>
-                <td>${dx2.toFixed(3)}</td>
-                <td>${dy2.toFixed(3)}</td>
-              </tr>`;
+                      <td>${xValues[i]}</td>
+                      <td>${yValues[i]}</td>
+                      <td>${dx.toFixed(3)}</td>
+                      <td>${dy.toFixed(3)}</td>
+                      <td>${product.toFixed(3)}</td>
+                      <td>${dx2.toFixed(3)}</td>
+                      <td>${dy2.toFixed(3)}</td>
+                    </tr>`;
         }
 
         steps += `<tr>
-              <td><strong>Mean of X (X̄):</strong> ${meanX.toFixed(3)}</td>
-              <td><strong>Mean of Y (Ȳ):</strong> ${meanY.toFixed(3)}</td>
-              <td colspan="2"><strong>Total Sum</strong></td>
-              <td><strong>${sumXY.toFixed(3)}</strong></td>
-              <td><strong>${sumX2.toFixed(3)}</strong></td>
-              <td><strong>${sumY2.toFixed(3)}</strong></td>
-            </tr>`;
-        steps += `</table>`;
+                    <td><strong>Mean of X (X̄):</strong> ${meanX.toFixed(3)}</td>
+                    <td><strong>Mean of Y (Ȳ):</strong> ${meanY.toFixed(3)}</td>
+                    <td colspan="2"><strong>Total Sum</strong></td>
+                    <td><strong>${sumXY.toFixed(3)}</strong></td>
+                    <td><strong>${sumX2.toFixed(3)}</strong></td>
+                    <td><strong>${sumY2.toFixed(3)}</strong></td>
+                  </tr>`;
+        steps += `</table>
+                  </div>`;
 
         let correlation = sumXY / Math.sqrt(sumX2 * sumY2);
 
@@ -188,21 +344,24 @@
 
         output += steps;
 
-        output += `<h3>Step 3: Apply the Pearson Correlation Formula</h3>`;
-        output += `<p>r = Σ((X - X̄)(Y - Ȳ)) / √[Σ(X - X̄)² * Σ(Y - Ȳ)²]</p>`;
-        output += `<p>r = ${sumXY.toFixed(3)} / √(${sumX2.toFixed(
+        output += `<div class="calculation-step">
+                    <h3>Step 3: Apply the Pearson Correlation Formula</h3>
+                    <p>r = Σ((X - X̄)(Y - Ȳ)) / √[Σ(X - X̄)² * Σ(Y - Ȳ)²]</p>
+                    <p>r = ${sumXY.toFixed(3)} / √(${sumX2.toFixed(
           3
-        )} * ${sumY2.toFixed(3)})</p>`;
-        output += `<h3>Final Result:</h3>`;
-        output += `<p><strong>Correlation Coefficient (r):</strong> ${correlation.toFixed(
-          3
-        )}</p>`;
-        output += `<p><strong>Correlation Strength:</strong> ${correlationStrength}</p>`;
+        )} * ${sumY2.toFixed(3)})</p>
+                    <p><strong>Correlation Coefficient (r):</strong> ${correlation.toFixed(
+                      3
+                    )}</p>
+                    <p><strong>Correlation Strength:</strong> ${correlationStrength}</p>
+                  </div>`;
 
         // Hypothesis Testing
-        output += `<h3>Hypothesis Testing</h3>`;
-        output += `<p><strong>Null Hypothesis (H₀):</strong> There is no correlation between X and Y (ρ = 0).</p>`;
-        output += `<p><strong>Alternative Hypothesis (H₁):</strong> There is a significant correlation (ρ ≠ 0).</p>`;
+        output += `<div class="calculation-step">
+                    <h3>Hypothesis Testing</h3>
+                    <p><strong>Null Hypothesis (H₀):</strong> There is no correlation between X and Y (ρ = 0).</p>
+                    <p><strong>Alternative Hypothesis (H₁):</strong> There is a significant correlation (ρ ≠ 0).</p>
+                  </div>`;
 
         let tStatistic =
           (correlation * Math.sqrt(n - 2)) / Math.sqrt(1 - correlation ** 2);
@@ -210,22 +369,29 @@
         let alpha = 0.05; // Significance level
         let tCritical = 2.306; // Example critical value for df=8 and α=0.05 (two-tailed)
 
-        output += `<h3>Step 4: Calculate t-Statistic</h3>`;
-        output += `<p>t = (r * √(n - 2)) / √(1 - r²)</p>`;
-        output += `<p>t = (${correlation.toFixed(
+        output += `<div class="calculation-step">
+                    <h3>Step 4: Calculate t-Statistic</h3>
+                    <p>t = (r * √(n - 2)) / √(1 - r²)</p>
+                    <p>t = (${correlation.toFixed(
+                      3
+                    )} * √(${n} - 2)) / √(1 - ${correlation.toFixed(3)}²)</p>
+                    <p>t = ${tStatistic.toFixed(3)}</p>
+                  </div>`;
+
+        output += `<div class="calculation-step">
+                    <h3>Step 5: Determine Degrees of Freedom</h3>
+                    <p>df = n - 2 = ${n} - 2 = ${df}</p>
+                  </div>`;
+
+        output += `<div class="calculation-step">
+                    <h3>Step 6: Find Critical t-Value</h3>
+                    <p>For df = ${df} and α = ${alpha} (two-tailed), the critical t-value is ${tCritical.toFixed(
           3
-        )} * √(${n} - 2)) / √(1 - ${correlation.toFixed(3)}²)</p>`;
-        output += `<p>t = ${tStatistic.toFixed(3)}</p>`;
+        )}.</p>
+                  </div>`;
 
-        output += `<h3>Step 5: Determine Degrees of Freedom</h3>`;
-        output += `<p>df = n - 2 = ${n} - 2 = ${df}</p>`;
-
-        output += `<h3>Step 6: Find Critical t-Value</h3>`;
-        output += `<p>For df = ${df} and α = ${alpha} (two-tailed), the critical t-value is ${tCritical.toFixed(
-          3
-        )}.</p>`;
-
-        output += `<h3>Step 7: Compare t-Statistic with t-Critical</h3>`;
+        output += `<div class="calculation-step">
+                    <h3>Step 7: Compare t-Statistic with t-Critical</h3>`;
         if (Math.abs(tStatistic) > tCritical) {
           output += `<p>Since |t| = ${Math.abs(tStatistic).toFixed(
             3
@@ -241,6 +407,7 @@
           )}, we <strong>fail to reject</strong> H₀.</p>`;
           output += `<p>The correlation is <strong>not statistically significant</strong>.</p>`;
         }
+        output += `</div>`;
 
         document.getElementById("output").innerHTML = output;
         drawChart(xValues, yValues);
@@ -256,14 +423,29 @@
               {
                 label: "Scatter Plot",
                 data: xValues.map((x, i) => ({ x: x, y: yValues[i] })),
-                backgroundColor: "green",
+                backgroundColor: "#2cc197",
               },
             ],
           },
           options: {
             scales: {
-              x: { title: { display: true, text: "X Values" } },
-              y: { title: { display: true, text: "Y Values" } },
+              x: {
+                title: { display: true, text: "X Values", color: "#d1d1d1" },
+                grid: { color: "#04634d" },
+                ticks: { color: "#d1d1d1" },
+              },
+              y: {
+                title: { display: true, text: "Y Values", color: "#d1d1d1" },
+                grid: { color: "#04634d" },
+                ticks: { color: "#d1d1d1" },
+              },
+            },
+            plugins: {
+              legend: {
+                labels: {
+                  color: "#d1d1d1",
+                },
+              },
             },
           },
         });
