@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Correlation Calculator</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        line-height: 1.6;
+        margin: 0;
+        padding: 20px;
+        background-color: #f5f5f5;
+        color: #333;
+      }
+
+      .container {
+        max-width: 900px;
+        margin: 0 auto;
+        background-color: white;
+        padding: 30px;
+        border-radius: 8px;
+        box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+      }
+
+      h1,
+      h2 {
+        color: #2c3e50;
+        text-align: center;
+      }
+
+      .input-section {
+        background-color: #f9f9f9;
+        padding: 20px;
+        border-radius: 5px;
+        margin-bottom: 30px;
+      }
+
+      .form-group {
+        margin-bottom: 15px;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: bold;
+      }
+
+      select,
+      input {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 16px;
+      }
+
+      button {
+        background-color: #3498db;
+        color: white;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 16px;
+        display: block;
+        margin: 20px auto 0;
+        transition: background-color 0.3s;
+      }
+
+      button:hover {
+        background-color: #2980b9;
+      }
+
+      .results-section {
+        background-color: #f9f9f9;
+        padding: 20px;
+        border-radius: 5px;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 15px 0;
+      }
+
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+      }
+
+      th {
+        background-color: #f2f2f2;
+      }
+
+      .step {
+        margin-bottom: 15px;
+        padding: 10px;
+        background-color: white;
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      }
+
+      .result-box {
+        padding: 15px;
+        margin-top: 20px;
+        border-radius: 4px;
+        background-color: #e8f4fc;
+        border-left: 4px solid #3498db;
+      }
+
+      .significant {
+        background-color: #e8f8f0;
+        border-left: 4px solid #2ecc71;
+      }
+
+      .not-significant {
+        background-color: #fde8e8;
+        border-left: 4px solid #e74c3c;
+      }
+
+      @media (max-width: 600px) {
+        .container {
+          padding: 15px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Correlation Calculator</h1>
+
+      <div class="input-section">
+        <div class="form-group">
+          <label for="correlation-type">Select Correlation Type:</label>
+          <select id="correlation-type">
+            <option value="pearson">Pearson's r</option>
+            <option value="spearman">Spearman's ρ</option>
+            <option value="pointbiserial">Point-Biserial</option>
+            <option value="cramersv">Cramér's V</option>
+            <option value="kendall">Kendall's τ</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label for="variable-count">Number of Variables:</label>
+          <select id="variable-count">
+            <option value="2">2 (X and Y)</option>
+            <option value="3">3 (X, Y, Z)</option>
+          </select>
+        </div>
+
+        <div id="data-inputs">
+          <!-- Dynamically generated inputs will go here -->
+        </div>
+
+        <button id="calculate-btn">Calculate Correlation</button>
+      </div>
+
+      <div id="results" class="results-section">
+        <h2>Results</h2>
+        <div id="calculation-steps"></div>
+        <div id="hypothesis-testing"></div>
+        <div id="final-result"></div>
+      </div>
+    </div>
+
+    <script>
+              document.addEventListener('DOMContentLoaded', function() {
+          const correlationTypeSelect = document.getElementById('correlation-type');
+          const variableCountSelect = document.getElementById('variable-count');
+          const dataInputsDiv = document.getElementById('data-inputs');
+          const calculateBtn = document.getElementById('calculate-btn');
+          const calculationStepsDiv = document.getElementById('calculation-steps');
+          const hypothesisTestingDiv = document.getElementById('hypothesis-testing');
+          const finalResultDiv = document.getElementById('final-result');
+
+          // Initialize data inputs based on default selections
+          updateDataInputs();
+
+          // Update data inputs when selections change
+          correlationTypeSelect.addEventListener('change', updateDataInputs);
+          variableCountSelect.addEventListener('change', updateDataInputs);
+
+          // Calculate correlation when button is clicked
+          calculateBtn.addEventListener('click', calculateCorrelation);
+
+          function updateDataInputs() {
+              const correlationType = correlationTypeSelect.value;
+              const variableCount = parseInt(variableCountSelect.value);
+
+              dataInputsDiv.innerHTML = '';
+
+              if (correlationType === 'pointbiserial') {
+                  // Point-Biserial requires one binary and one continuous variable
+                  createBinaryVariableInput('X (Binary)');
+                  createContinuousVariableInput('Y (Continuous)');
+              } else if (correlationType === 'cramersv') {
+                  // Cramér's V requires two categorical variables
+                  createCategoricalVariableInput('Variable 1');
+                  createCategoricalVariableInput('Variable 2');
+              } else {
+                  // Other correlations can handle multiple continuous variables
+                  for (let i = 0; i < variableCount; i++) {
+                      createContinuousVariableInput(String.fromCharCode(88 + i)); // X, Y, Z
+                  }
+              }
+          }
+
+          function createContinuousVariableInput(label) {
+              const group = document.createElement('div');
+              group.className = 'form-group';
+
+              const lbl = document.createElement('label');
+              lbl.textContent = `${label} (comma-separated values):`;
+
+              const input = document.createElement('input');
+              input.type = 'text';
+              input.placeholder = 'e.g., 1, 2, 3, 4, 5';
+              input.dataset.variable = label;
+
+              group.appendChild(lbl);
+              group.appendChild(input);
+              dataInputsDiv.appendChild(group);
+          }
+
+          function createBinaryVariableInput(label) {
+              const group = document.createElement('div');
+              group.className = 'form-group';
+
+              const lbl = document.createElement('label');
+              lbl.textContent = `${label} (comma-separated 0s and 1s):`;
+
+              const input = document.createElement('input');
+              input.type = 'text';
+              input.placeholder = 'e.g., 0, 0, 1, 1';
+              input.dataset.variable = label;
+
+              group.appendChild(lbl);
+              group.appendChild(input);
+              dataInputsDiv.appendChild(group);
+          }
+
+          function createCategoricalVariableInput(label) {
+              const group = document.createElement('div');
+              group.className = 'form-group';
+
+              const lbl = document.createElement('label');
+              lbl.textContent = `${label} (comma-separated categories):`;
+
+              const input = document.createElement('input');
+              input.type = 'text';
+              input.placeholder = 'e.g., A, A, B, B, C';
+              input.dataset.variable = label;
+
+              group.appendChild(lbl);
+              group.appendChild(input);
+              dataInputsDiv.appendChild(group);
+          }
+
+          function calculateCorrelation() {
+              const correlationType = correlationTypeSelect.value;
+              const inputs = Array.from(dataInputsDiv.querySelectorAll('input'));
+
+              // Parse input data
+              const data = {};
+              inputs.forEach(input => {
+                  const variableName = input.dataset.variable;
+                  const values = input.value.split(',').map(item => item.trim());
+
+                  if (correlationType === 'pointbiserial' && variableName.includes('Binary')) {
+                      data[variableName] = values.map(val => parseInt(val));
+                  } else if (correlationType === 'cramersv') {
+                      data[variableName] = values;
+                  } else {
+                      data[variableName] = values.map(val => parseFloat(val));
+                  }
+              });
+
+              // Check for equal length
+              const lengths = Object.values(data).map(arr => arr.length);
+              if (new Set(lengths).size !== 1) {
+                  alert('All variables must have the same number of values');
+                  return;
+              }
+
+              // Clear previous results
+              calculationStepsDiv.innerHTML = '';
+              hypothesisTestingDiv.innerHTML = '';
+              finalResultDiv.innerHTML = '';
+
+              // Calculate based on selected correlation type
+              switch (correlationType) {
+                  case 'pearson':
+                      calculatePearson(data);
+                      break;
+                  case 'spearman':
+                      calculateSpearman(data);
+                      break;
+                  case 'pointbiserial':
+                      calculatePointBiserial(data);
+                      break;
+                  case 'cramersv':
+                      calculateCramersV(data);
+                      break;
+                  case 'kendall':
+                      calculateKendall(data);
+                      break;
+              }
+          }
+
+          function calculatePearson(data) {
+              const varNames = Object.keys(data);
+              const x = data[varNames[0]];
+              const y = data[varNames[1]];
+              const n = x.length;
+
+              // Calculation steps
+              addStep('Step 1: Calculate Means');
+              const xMean = mean(x);
+              const yMean = mean(y);
+              addStep(`Mean of X = ${xMean.toFixed(2)}`);
+              addStep(`Mean of Y = ${yMean.toFixed(2)}`);
+
+              addStep('Step 2: Calculate Covariance');
+              let covariance = 0;
+              for (let i = 0; i < n; i++) {
+                  covariance += (x[i] - xMean) * (y[i] - yMean);
+              }
+              covariance /= n;
+              addStep(`Cov(X,Y) = ${covariance.toFixed(2)}`);
+
+              addStep('Step 3: Calculate Standard Deviations');
+              const xStd = standardDeviation(x);
+              const yStd = standardDeviation(y);
+              addStep(`SD of X = ${xStd.toFixed(2)}`);
+              addStep(`SD of Y = ${yStd.toFixed(2)}`);
+
+              addStep('Step 4: Calculate Pearson\'s r');
+              const r = covariance / (xStd * yStd);
+              addStep(`r = Cov(X,Y) / (SD_X × SD_Y) = ${r.toFixed(4)}`);
+
+              // Hypothesis testing
+              performHypothesisTest(r, n, 'Pearson\'s r');
+          }
+
+          function calculateSpearman(data) {
+              const varNames = Object.keys(data);
+              const x = data[varNames[0]];
+              const y = data[varNames[1]];
+              const n = x.length;
+
+              addStep('Step 1: Rank the Data');
+              const xRanks = rankData(x);
+              const yRanks = rankData(y);
+              addStep(`X Ranks: ${xRanks.join(', ')}`);
+              addStep(`Y Ranks: ${yRanks.join(', ')}`);
+
+              addStep('Step 2: Calculate Rank Differences');
+              let dSquaredSum = 0;
+              for (let i = 0; i < n; i++) {
+                  const d = xRanks[i] - yRanks[i];
+                  dSquaredSum += d * d;
+                  addStep(`Pair ${i+1}: d = ${d}, d² = ${d*d}`);
+              }
+              addStep(`Sum of d² = ${dSquaredSum}`);
+
+              addStep('Step 3: Calculate Spearman\'s ρ');
+              const rho = 1 - (6 * dSquaredSum) / (n * (n * n - 1));
+              addStep(`ρ = 1 - [6 × Σd² / (n(n² - 1))] = ${rho.toFixed(4)}`);
+
+              // Hypothesis testing
+              performHypothesisTest(rho, n, 'Spearman\'s ρ');
+          }
+
+          function calculatePointBiserial(data) {
+              const x = data['X (Binary)'];
+              const y = data['Y (Continuous)'];
+              const n = x.length;
+
+              addStep('Step 1: Group Continuous Variable by Binary Categories');
+              const group0 = y.filter((_, i) => x[i] === 0);
+              const group1 = y.filter((_, i) => x[i] === 1);
+              addStep(`Group 0 (X=0): ${group0.join(', ')}`);
+              addStep(`Group 1 (X=1): ${group1.join(', ')}`);
+
+              addStep('Step 2: Calculate Group Means');
+              const mean0 = mean(group0);
+              const mean1 = mean(group1);
+              addStep(`Mean of Y when X=0: ${mean0.toFixed(2)}`);
+              addStep(`Mean of Y when X=1: ${mean1.toFixed(2)}`);
+
+              addStep('Step 3: Calculate Pooled Standard Deviation');
+              const sd0 = standardDeviation(group0);
+              const sd1 = standardDeviation(group1);
+              const pooledSD = Math.sqrt(
+                  ((group0.length - 1) * sd0 * sd0 + (group1.length - 1) * sd1 * sd1) /
+                  (group0.length + group1.length - 2)
+              );
+              addStep(`Pooled SD = ${pooledSD.toFixed(2)}`);
+
+              addStep('Step 4: Calculate Point-Biserial Correlation');
+              const r_pb = ((mean1 - mean0) / pooledSD) *
+                          Math.sqrt((group0.length * group1.length) / (n * (n - 1)));
+              addStep(`r_pb = ${r_pb.toFixed(4)}`);
+
+              // Hypothesis testing
+              performHypothesisTest(r_pb, n, 'Point-Biserial Correlation');
+          }
+
+          function calculateCramersV(data) {
+              const var1 = data['Variable 1'];
+              const var2 = data['Variable 2'];
+              const n = var1.length;
+
+              addStep('Step 1: Create Contingency Table');
+              const categories1 = [...new Set(var1)];
+              const categories2 = [...new Set(var2)];
+
+              // Initialize contingency table
+              const contingencyTable = {};
+              categories1.forEach(cat1 => {
+                  contingencyTable[cat1] = {};
+                  categories2.forEach(cat2 => {
+                      contingencyTable[cat1][cat2] = 0;
+                  });
+              });
+
+              // Fill contingency table
+              for (let i = 0; i < n; i++) {
+                  contingencyTable[var1[i]][var2[i]]++;
+              }
+
+              // Display contingency table
+              let tableHTML = '<table><tr><th></th>';
+              categories2.forEach(cat2 => {
+                  tableHTML += `<th>${cat2}</th>`;
+              });
+              tableHTML += '<th>Total</th></tr>';
+
+              categories1.forEach(cat1 => {
+                  tableHTML += `<tr><th>${cat1}</th>`;
+                  let rowTotal = 0;
+                  categories2.forEach(cat2 => {
+                      tableHTML += `<td>${contingencyTable[cat1][cat2]}</td>`;
+                      rowTotal += contingencyTable[cat1][cat2];
+                  });
+                  tableHTML += `<td>${rowTotal}</td></tr>`;
+              });
+
+              // Add column totals
+              tableHTML += '<tr><th>Total</th>';
+              let grandTotal = 0;
+              categories2.forEach(cat2 => {
+                  let colTotal = 0;
+                  categories1.forEach(cat1 => {
+                      colTotal += contingencyTable[cat1][cat2];
+                  });
+                  tableHTML += `<td>${colTotal}</td>`;
+                  grandTotal += colTotal;
+              });
+              tableHTML += `<td>${grandTotal}</td></tr></table>`;
+              addStep(tableHTML);
+
+              addStep('Step 2: Calculate Chi-Square Statistic');
+              let chiSquare = 0;
+              categories1.forEach(cat1 => {
+                  categories2.forEach(cat2 => {
+                      const observed = contingencyTable[cat1][cat2];
+                      const expected = (contingencyTable[cat1].__rowTotal ||
+                          Object.values(contingencyTable[cat1]).reduce((a, b) => a + b)) *
+                          categories1.reduce((sum, c1) => sum + contingencyTable[c1][cat2], 0) / grandTotal;
+                      chiSquare += Math.pow(observed - expected, 2) / expected;
+                  });
+              });
+              addStep(`χ² = ${chiSquare.toFixed(4)}`);
+
+              addStep('Step 3: Calculate Cramér\'s V');
+              const k = Math.min(categories1.length, categories2.length);
+              const v = Math.sqrt(chiSquare / (grandTotal * (k - 1)));
+              addStep(`V = √(χ² / (n × (k - 1))) = ${v.toFixed(4)}`);
+
+              // Hypothesis testing for Chi-Square
+              const df = (categories1.length - 1) * (categories2.length - 1);
+              const criticalValue = getChiSquareCriticalValue(df);
+
+              const resultDiv = document.createElement('div');
+              resultDiv.className = chiSquare > criticalValue ? 'result-box significant' : 'result-box not-significant';
+
+              resultDiv.innerHTML = `
+                  <h3>Hypothesis Test Results</h3>
+                  <p><strong>Null Hypothesis (H₀):</strong> No association between variables</p>
+                  <p><strong>Alternative Hypothesis (H₁):</strong> Variables are associated</p>
+                  <p><strong>Chi-Square Statistic:</strong> ${chiSquare.toFixed(4)}</p>
+                  <p><strong>Degrees of Freedom:</strong> ${df}</p>
+                  <p><strong>Critical Value (α=0.05):</strong> ${criticalValue.toFixed(4)}</p>
+                  <p><strong>Conclusion:</strong> ${chiSquare > criticalValue ?
+                      'Reject H₀ (Significant association)' :
+                      'Fail to reject H₀ (No significant association)'}</p>
+                  <p><strong>Cramér\'s V Effect Size:</strong> ${v.toFixed(4)}</p>
+              `;
+
+              hypothesisTestingDiv.appendChild(resultDiv);
+              displayFinalResult('Cramér\'s V', v);
+          }
+
+          function calculateKendall(data) {
+              const varNames = Object.keys(data);
+              const x = data[varNames[0]];
+              const y = data[varNames[1]];
+              const n = x.length;
+
+              addStep('Step 1: List All Possible Pairs');
+              let concordant = 0;
+              let discordant = 0;
+
+              for (let i = 0; i < n - 1; i++) {
+                  for (let j = i + 1; j < n; j++) {
+                      const xDirection = Math.sign(x[j] - x[i]);
+                      const yDirection = Math.sign(y[j] - y[i]);
+
+                      if (xDirection * yDirection > 0) {
+                          concordant++;
+                          addStep(`Pairs (${i+1},${j+1}): Concordant (${xDirection}, ${yDirection})`);
+                      } else if (xDirection * yDirection < 0) {
+                          discordant++;
+                          addStep(`Pairs (${i+1},${j+1}): Discordant (${xDirection}, ${yDirection})`);
+                      } else {
+                          addStep(`Pairs (${i+1},${j+1}): Tie (ignored)`);
+                      }
+                  }
+              }
+
+              addStep(`Total Concordant Pairs: ${concordant}`);
+              addStep(`Total Discordant Pairs: ${discordant}`);
+
+              addStep('Step 2: Calculate Kendall\'s τ');
+              const tau = (concordant - discordant) / (0.5 * n * (n - 1));
+              addStep(`τ = (C - D) / (n(n-1)/2) = ${tau.toFixed(4)}`);
+
+              // Hypothesis testing
+              performHypothesisTest(tau, n, 'Kendall\'s τ');
+          }
+
+          function performHypothesisTest(correlation, n, correlationName) {
+              let testStatistic, df, criticalValue;
+
+              if (correlationName === 'Pearson\'s r' || correlationName === 'Point-Biserial Correlation') {
+                  // t-test for Pearson and Point-Biserial
+                  testStatistic = correlation * Math.sqrt((n - 2) / (1 - correlation * correlation));
+                  df = n - 2;
+                  criticalValue = getTCriticalValue(df);
+              } else if (correlationName === 'Spearman\'s ρ' || correlationName === 'Kendall\'s τ') {
+                  // Special tables or approximations for Spearman and Kendall
+                  // For simplicity, we'll use a normal approximation here
+                  if (n > 10) {
+                      if (correlationName === 'Spearman\'s ρ') {
+                          testStatistic = correlation * Math.sqrt(n - 1);
+                      } else { // Kendall's τ
+                          testStatistic = correlation * Math.sqrt((9 * n * (n - 1)) / (2 * (2 * n + 5)));
+                      }
+                      criticalValue = 1.96; // For α=0.05, two-tailed
+                  } else {
+                      // For small samples, we'd typically use exact tables
+                      // Here we'll just note that the test isn't valid for small n
+                      const resultDiv = document.createElement('div');
+                      resultDiv.className = 'result-box not-significant';
+                      resultDiv.innerHTML = `
+                          <h3>Hypothesis Test Note</h3>
+                          <p>For ${correlationName} with n ≤ 10, exact tables are needed for hypothesis testing.</p>
+                          <p>Sample size is too small for normal approximation.</p>
+                      `;
+                      hypothesisTestingDiv.appendChild(resultDiv);
+                      displayFinalResult(correlationName, correlation);
+                      return;
+                  }
+              }
+
+              const pValue = 2 * (1 - normalCDF(Math.abs(testStatistic))); // Two-tailed
+
+              const resultDiv = document.createElement('div');
+              resultDiv.className = pValue < 0.05 ? 'result-box significant' : 'result-box not-significant';
+
+              resultDiv.innerHTML = `
+                  <h3>Hypothesis Test Results</h3>
+                  <p><strong>Null Hypothesis (H₀):</strong> No correlation (ρ = 0)</p>
+                  <p><strong>Alternative Hypothesis (H₁):</strong> Correlation exists (ρ ≠ 0)</p>
+                  <p><strong>Test Statistic:</strong> ${testStatistic.toFixed(4)}</p>
+                  ${df ? `<p><strong>Degrees of Freedom:</strong> ${df}</p>` : ''}
+                  <p><strong>Critical Value (α=0.05):</strong> ±${criticalValue.toFixed(4)}</p>
+                  <p><strong>p-value:</strong> ${pValue.toFixed(4)}</p>
+                  <p><strong>Conclusion:</strong> ${pValue < 0.05 ?
+                      'Reject H₀ (Significant correlation)' :
+                      'Fail to reject H₀ (No significant correlation)'}</p>
+              `;
+
+              hypothesisTestingDiv.appendChild(resultDiv);
+              displayFinalResult(correlationName, correlation);
+          }
+
+          function displayFinalResult(correlationName, value) {
+              finalResultDiv.innerHTML = `
+                  <div class="result-box ${Math.abs(value) > 0.5 ? 'significant' : 'not-significant'}">
+                      <h3>Final Result</h3>
+                      <p><strong>${correlationName}:</strong> ${value.toFixed(4)}</p>
+                      <p><strong>Interpretation:</strong> ${interpretCorrelation(value)}</p>
+                  </div>
+              `;
+          }
+
+          function interpretCorrelation(value) {
+              const absValue = Math.abs(value);
+              if (absValue >= 0.9) return 'Very strong correlation';
+              if (absValue >= 0.7) return 'Strong correlation';
+              if (absValue >= 0.5) return 'Moderate correlation';
+              if (absValue >= 0.3) return 'Weak correlation';
+              return 'Very weak or no correlation';
+          }
+
+          // Helper functions
+          function addStep(content) {
+              const stepDiv = document.createElement('div');
+              stepDiv.className = 'step';
+              stepDiv.innerHTML = content;
+              calculationStepsDiv.appendChild(stepDiv);
+          }
+
+          function mean(arr) {
+              return arr.reduce((a, b) => a + b, 0) / arr.length;
+          }
+
+          function standardDeviation(arr) {
+              const arrMean = mean(arr);
+              const squaredDiffs = arr.map(val => Math.pow(val - arrMean, 2));
+              return Math.sqrt(mean(squaredDiffs));
+          }
+
+          function rankData(arr) {
+              // Create array of objects with original values and indices
+              const indexedArr = arr.map((val, idx) => ({val, idx}));
+
+              // Sort by value
+              indexedArr.sort((a, b) => a.val - b.val);
+
+              // Assign ranks, handling ties
+              const ranks = new Array(arr.length);
+              for (let i = 0; i < indexedArr.length; i++) {
+                  let j = i;
+                  while (j < indexedArr.length - 1 && indexedArr[j+1].val === indexedArr[j].val) {
+                      j++;
+                  }
+
+                  // Average rank for tied values
+                  const avgRank = (i + j + 2) / 2;
+                  for (let k = i; k <= j; k++) {
+                      ranks[indexedArr[k].idx] = avgRank;
+                  }
+
+                  i = j;
+              }
+
+              return ranks;
+          }
+
+          function getTCriticalValue(df) {
+              // Simplified critical values for α=0.05, two-tailed
+              const tTable = {
+                  1: 12.706, 2: 4.303, 3: 3.182, 4: 2.776, 5: 2.571,
+                  6: 2.447, 7: 2.365, 8: 2.306, 9: 2.262, 10: 2.228,
+                  20: 2.086, 30: 2.042, 40: 2.021, 50: 2.009, 100: 1.984
+              };
+
+              if (df <= 10) return tTable[df];
+              if (df <= 20) return tTable[10] + (tTable[20] - tTable[10]) * (df - 10) / 10;
+              if (df <= 30) return tTable[20] + (tTable[30] - tTable[20]) * (df - 20) / 10;
+              if (df <= 40) return tTable[30] + (tTable[40] - tTable[30]) * (df - 30) / 10;
+              if (df <= 50) return tTable[40] + (tTable[50] - tTable[40]) * (df - 40) / 10;
+              if (df <= 100) return tTable[50] + (tTable[100] - tTable[50]) * (df - 50) / 50;
+              return 1.96; // Approximate with normal for large df
+          }
+
+          function getChiSquareCriticalValue(df) {
+              // Simplified critical values for α=0.05
+              const chiSquareTable = {
+                  1: 3.841, 2: 5.991, 3: 7.815, 4: 9.488, 5: 11.070,
+                  6: 12.592, 7: 14.067, 8: 15.507, 9: 16.919, 10: 18.307
+              };
+              return chiSquareTable[df] || 0;
+          }
+
+          function normalCDF(z) {
+              // Approximation of standard normal CDF
+              const t = 1 / (1 + 0.2316419 * Math.abs(z));
+              const d = 0.3989423 * Math.exp(-z * z / 2);
+              let probability = d * t * (0.3193815 + t * (-0.3565638 + t * (1.781478 + t * (-1.821256 + t * 1.330274))));
+              if (z > 0) probability = 1 - probability;
+              return probability;
+          }
+      });
+    </script>
+  </body>
+</html>

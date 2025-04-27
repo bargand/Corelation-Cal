@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Statistical Correlation Calculator</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="header-content">
+                <h1>Statistical Correlation Calculator</h1>
+                <p class="subtitle">Calculate and visualize relationships between variables</p>
+            </div>
+            <div class="header-decoration"></div>
+        </header>
+
+        <main class="app-main">
+            <section class="control-panel">
+                <div class="card input-card">
+                    <h2 class="card-title">Input Parameters</h2>
+                    
+                    <div class="form-group">
+                        <label for="correlation-type" class="form-label">
+                            <span class="label-text">Correlation Type</span>
+                            <span class="info-tooltip" title="Select the type of correlation coefficient you want to calculate">ⓘ</span>
+                        </label>
+                        <select id="correlation-type" class="form-select">
+                            <option value="pearson">Pearson's r (Linear)</option>
+                            <option value="spearman">Spearman's ρ (Rank)</option>
+                            <option value="pointbiserial">Point-Biserial</option>
+                            <option value="cramersv">Cramér's V</option>
+                            <option value="kendall">Kendall's τ</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="variable-count" class="form-label">
+                            <span class="label-text">Number of Variables</span>
+                            <span class="info-tooltip" title="Choose how many variables you want to analyze">ⓘ</span>
+                        </label>
+                        <select id="variable-count" class="form-select">
+                            <option value="2">2 (X and Y)</option>
+                            <option value="3">3 (X, Y, Z)</option>
+                        </select>
+                    </div>
+
+                    <div id="data-inputs" class="data-input-container">
+                        <!-- Dynamic inputs will be inserted here -->
+                    </div>
+
+                    <div class="form-actions">
+                        <button id="calculate-btn" class="primary-button">
+                            <span class="button-icon">📊</span>
+                            Calculate Correlation
+                        </button>
+                        <button id="reset-btn" class="secondary-button">
+                            <span class="button-icon">🔄</span>
+                            Reset
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card info-card">
+                    <h2 class="card-title">About This Tool</h2>
+                    <div class="info-content">
+                        <p>This calculator computes statistical correlations between variables with hypothesis testing.</p>
+                        <ul class="info-list">
+                            <li><strong>Pearson's r</strong>: Measures linear relationships</li>
+                            <li><strong>Spearman's ρ</strong>: Measures monotonic relationships</li>
+                            <li><strong>Point-Biserial</strong>: For binary-continuous pairs</li>
+                            <li><strong>Cramér's V</strong>: For categorical associations</li>
+                            <li><strong>Kendall's τ</strong>: For ordinal data</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <section class="results-area">
+                <div class="results-tabs">
+                    <button class="tab-button active" data-tab="results">Results</button>
+                    <button class="tab-button" data-tab="visualization">Visualization</button>
+                    <button class="tab-button" data-tab="steps">Calculation Steps</button>
+                </div>
+
+                <div id="results" class="tab-content active">
+                    <div class="result-summary-card">
+                        <div class="result-header">
+                            <h3>Correlation Result</h3>
+                            <div class="result-meta">
+                                <span class="method-badge" id="method-badge">Pearson's r</span>
+                                <span class="sample-size-badge" id="sample-size-badge">n=0</span>
+                            </div>
+                        </div>
+                        <div class="result-main">
+                            <div class="correlation-value" id="correlation-value">
+                                <span class="value">-</span>
+                                <span class="interpretation">Select data and calculate</span>
+                            </div>
+                            <div class="significance-indicator" id="significance-indicator">
+                                <div class="indicator-dot"></div>
+                                <span class="indicator-text">Not calculated</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="hypothesis-test-card">
+                        <h3>Hypothesis Testing</h3>
+                        <div id="hypothesis-testing">
+                            <p class="placeholder-text">Results will appear here after calculation</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="visualization" class="tab-content">
+                    <div class="chart-container">
+                        <canvas id="correlation-chart"></canvas>
+                    </div>
+                    <div class="chart-legend" id="chart-legend"></div>
+                </div>
+
+                <div id="steps" class="tab-content">
+                    <div class="steps-container">
+                        <div id="calculation-steps">
+                            <p class="placeholder-text">Detailed calculation steps will appear here</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <footer class="app-footer">
+            <p>Statistical Correlation Calculator © 2023 | For educational purposes</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
